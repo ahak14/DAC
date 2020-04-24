@@ -10,8 +10,10 @@ int adjacent_matrix_road_cost[MAX_TOWNS][MAX_TOWNS];
 vector<int> adjacent_list_roads[MAX_TOWNS];
 int residency_cost[6];
 
-long long int shortest_path_cost_in_specific_days[MAX_TOWNS][MAX_TOWNS][MAX_TOWNS];
-int next_town_for_shortest_path_in_specific_days[MAX_TOWNS][MAX_TOWNS][MAX_TOWNS];
+long long int shortest_path_cost_in_specific_days[MAX_TOWNS][MAX_TOWNS][MAX_TOWNS]; // family v -> town u in i day
+int next_town_for_shortest_path_in_specific_days[MAX_TOWNS][MAX_TOWNS][MAX_TOWNS];  // family v -> town u in i day
+long long int meeting_cost_in_specific_town_days[MAX_TOWNS][MAX_TOWNS][MAX_TOWNS][MAX_TOWNS];
+// family in town(v) and family in town(u) go to town(z) in i days
 
 
 void get_inputs() {
@@ -89,25 +91,26 @@ void preprocess_shortest_path_cost_in_specific_days() {
     }
 }
 
+void preprocess_meeting_cost_in_specific_town_days() {
+    for (int i = 1; i <= towns_number; i++) {
+        for (int j = 1; j <= towns_number; j++) {
+            for (int z = 1; z <= towns_number; z++) {
+                for (int day = 0; day <= towns_number; day++) {
+                    long long int temp1 = shortest_path_cost_in_specific_days[i][z][day];
+                    long long int temp2 = shortest_path_cost_in_specific_days[j][z][day];
+                    if (temp1 == -1 || temp2 == -1) {
+                        meeting_cost_in_specific_town_days[i][j][z][day] = -1;
+                    } else {
+                        meeting_cost_in_specific_town_days[i][j][z][day] = temp1 + temp2;
+                    }
+                }
+            }
+        }
+    }
+}
 
 int main() {
     get_inputs();
     preprocess_shortest_path_cost_in_specific_days();
-
-    for (int i = 0; i <= towns_number; i++) {
-        for (int j = 1; j <= towns_number; j++) {
-            for (int z = 1; z <= towns_number; z++) {
-                printf("%2lld ", shortest_path_cost_in_specific_days[j][z][i]);
-            }
-            cout << endl;
-        }
-        cout << endl;
-        for (int j = 1; j <= towns_number; j++) {
-            for (int z = 1; z <= towns_number; z++) {
-                printf("%2d ", next_town_for_shortest_path_in_specific_days[j][z][i]);
-            }
-            cout << endl;
-        }
-        cout << "\n\n";
-    }
+    preprocess_meeting_cost_in_specific_town_days();
 }
