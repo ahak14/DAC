@@ -140,6 +140,14 @@ pair<pair<int, int>, pair<int, int> > find_min_meeting_cost_in_specific_town_day
     return best;
 }
 
+void company(pair<pair<int, int>, pair<int, int> > &plan, vector<pair<pair<int, int>, pair<int, int> > > &result, int day) {
+    int host = plan.first.first == plan.second.first ? plan.first.first : plan.first.second;
+    int company = plan.first.first == host ? plan.first.second : plan.first.first;
+    result.push_back({{2, day}, {company, host}});
+    meeting[host][company] = true;
+    meeting_number++;
+}
+
 vector<pair<pair<int, int>, pair<int, int> > > start() {
     int day = 0;
     vector<pair<pair<int, int>, pair<int, int> > > result;
@@ -151,10 +159,17 @@ vector<pair<pair<int, int>, pair<int, int> > > start() {
         fill(fixed_meeting, fixed_meeting + MAX_TOWNS, false);
         for (int i = 0; i < meetings_plan_number; i++) {
             pair<pair<int, int>, pair<int, int> > plan = find_min_meeting_cost_in_specific_town_days(fixed_meeting);
+            if (plan.first.first == 0) {
+                continue;
+            }
             fixed_meeting[plan.first.first] = true;
             fixed_meeting[plan.first.second] = true;
             int new_town1 = next_town_for_shortest_path_in_specific_days[families_town[plan.first.first]][plan.second.first][plan.second.second];
             int new_town2 = next_town_for_shortest_path_in_specific_days[families_town[plan.first.second]][plan.second.first][plan.second.second];
+            if (plan.second.second == 0) {
+                company(plan, result, day);
+                continue;
+            }
             if (new_town1 != families_town[plan.first.first])
                 result.push_back({{1, day}, {plan.first.first, new_town1}});
             if (new_town2 != families_town[plan.first.second])
@@ -162,11 +177,7 @@ vector<pair<pair<int, int>, pair<int, int> > > start() {
             families_town[plan.first.first] = new_town1;
             families_town[plan.first.second] = new_town2;
             if (plan.second.second == 1) {
-                int host = plan.first.first == plan.second.first ? plan.first.first : plan.first.second;
-                int company = plan.first.first == host ? plan.first.second : plan.first.first;
-                result.push_back({{2, day}, {company, host}});
-                meeting[host][company] = true;
-                meeting_number++;
+                company(plan, result, day);
             }
         }
     }
