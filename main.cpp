@@ -2,88 +2,93 @@
 
 using namespace std;
 
-const int MAX_TOWNS = 6;
+const int town_number = 5 + 1;
+const int IMPOSSIBLE = -1;
 
 int towns_number;
 int roads_number;
-int adjacent_matrix_road_cost[MAX_TOWNS][MAX_TOWNS];
-vector<int> adjacent_list_roads[MAX_TOWNS];
-int residency_cost[6];
+int adjacent_matrix_town_cost[town_number][town_number];
+vector<int> adjacent_list_town[town_number];
+int residency_town_cost[6];
 
-long long int shortest_path_cost_in_specific_days[MAX_TOWNS][MAX_TOWNS][MAX_TOWNS]; // family v -> town u in i day
-int next_town_for_shortest_path_in_specific_days[MAX_TOWNS][MAX_TOWNS][MAX_TOWNS];  // family v -> town u in i day
-long long int meeting_cost_in_specific_town_days[MAX_TOWNS][MAX_TOWNS][MAX_TOWNS][MAX_TOWNS];
-// family in town(v) and family in town(u) go to town(z) in i days
+long long int shortest_path_cost_in_specific_days[town_number][town_number][town_number];
+// family v -> town u in i day
+int next_town_for_shortest_path_in_specific_days[town_number][town_number][town_number];
+// family v must go to which town for going to town u in i day
+long long int meeting_cost_in_specific_town_days[town_number][town_number][town_number][town_number];
+// cost of that family in town(v) and family in town(u) go to town(z) in i days
 
-int families_town[MAX_TOWNS];
-bool meeting[MAX_TOWNS][MAX_TOWNS]; // i meet j in town(i)
+int families_town[town_number];
+// town of families on time
+bool meeting[town_number][town_number];
+// did i meet j in town(i)
 int meeting_number = 0;
+// number of meeting so far
+
 
 void get_inputs() {
     cin >> towns_number >> roads_number;
     for (int i = 1; i <= towns_number; i++) {
-        cin >> residency_cost[i];
+        cin >> residency_town_cost[i];
         families_town[i] = i;
     }
     for (int i = 1; i <= towns_number; i++) {
         for (int j = 1; j <= towns_number; j++) {
             if (i == j) {
-                adjacent_matrix_road_cost[i][j] = residency_cost[i];
-                adjacent_list_roads[i].push_back(j);
+                adjacent_matrix_town_cost[i][j] = residency_town_cost[i];
+                adjacent_list_town[i].push_back(j);
             } else {
-                adjacent_matrix_road_cost[i][j] = -1;
+                adjacent_matrix_town_cost[i][j] = IMPOSSIBLE;
             }
         }
     }
     for (int i = 0; i < roads_number; i++) {
         int s, t, cost;
         cin >> s >> t >> cost;
-        adjacent_matrix_road_cost[s][t] = cost + residency_cost[t];
-        adjacent_matrix_road_cost[t][s] = cost + residency_cost[s];
-        adjacent_list_roads[s].push_back(t);
-        adjacent_list_roads[t].push_back(s);
+        adjacent_matrix_town_cost[s][t] = cost + residency_town_cost[t];
+        adjacent_matrix_town_cost[t][s] = cost + residency_town_cost[s];
+        adjacent_list_town[s].push_back(t);
+        adjacent_list_town[t].push_back(s);
+    }
+}
+
+void initialize_two_arrays_shortest_path_in_specific_days() {
+    for (int i = 1; i <= towns_number; i++) {
+        for (int j = 1; j <= towns_number; j++) {
+            for (int day = 0; day <= towns_number; day++) {
+                if (day == 0 && i == j) {
+                    shortest_path_cost_in_specific_days[i][j][day] = 0;
+
+                } else {
+                    shortest_path_cost_in_specific_days[i][j][day] = IMPOSSIBLE;
+                }
+                next_town_for_shortest_path_in_specific_days[i][j][day] = IMPOSSIBLE;
+            }
+        }
     }
 }
 
 void preprocess_shortest_path_cost_in_specific_days() {
-    for (int i = 1; i <= towns_number; i++) {
-        for (int j = 1; j <= towns_number; j++) {
-            for (int z = 0; z <= towns_number; z++) {
-                shortest_path_cost_in_specific_days[i][j][z] = -1;
-                next_town_for_shortest_path_in_specific_days[i][j][z] = -1;
-            }
-        }
-    }
-    for (int i = 1; i <= towns_number; i++) {
-        for (int j = 1; j <= towns_number; j++) {
-            if (i == j) {
-                shortest_path_cost_in_specific_days[i][j][0] = 0;
-            } else {
-                shortest_path_cost_in_specific_days[i][j][0] = -1;
-            }
-            next_town_for_shortest_path_in_specific_days[i][j][0] = -1;
-        }
-    }
-
+    initialize_two_arrays_shortest_path_in_specific_days();
     for (int day = 1; day <= towns_number; day++) {
         for (int i = 1; i <= towns_number; i++) {
             for (int j = 1; j <= towns_number; j++) {
                 long long int min_cost = INT64_MAX;
-                int min_town = -1;
-                vector<int> adjacent_list_road = adjacent_list_roads[j];
+                int min_town = IMPOSSIBLE;
+                vector<int> adjacent_list_road = adjacent_list_town[j];
                 for (int adjacent_road : adjacent_list_road) {
                     long long int temp = shortest_path_cost_in_specific_days[i][adjacent_road][day - 1];
-                    if (temp != -1 && (temp + adjacent_matrix_road_cost[adjacent_road][j] < min_cost)) {
-                        min_cost = temp + adjacent_matrix_road_cost[adjacent_road][j];
+                    if (temp != IMPOSSIBLE && (temp + adjacent_matrix_town_cost[adjacent_road][j] < min_cost)) {
+                        min_cost = temp + adjacent_matrix_town_cost[adjacent_road][j];
                         min_town = adjacent_road;
                     }
                 }
-                min_cost = min_cost == INT64_MAX ? -1 : min_cost;
+                min_cost = min_cost == INT64_MAX ? IMPOSSIBLE : min_cost;
                 shortest_path_cost_in_specific_days[i][j][day] = min_cost;
-                if (min_cost == -1) {
-                    next_town_for_shortest_path_in_specific_days[i][j][day] = -1;
+                if (min_cost == IMPOSSIBLE) {
+                    next_town_for_shortest_path_in_specific_days[i][j][day] = IMPOSSIBLE;
                 } else {
-                    if (next_town_for_shortest_path_in_specific_days[i][min_town][day - 1] == -1) {
+                    if (next_town_for_shortest_path_in_specific_days[i][min_town][day - 1] == IMPOSSIBLE) {
                         next_town_for_shortest_path_in_specific_days[i][j][day] = j;
                     } else {
                         next_town_for_shortest_path_in_specific_days[i][j][day] =
@@ -102,8 +107,8 @@ void preprocess_meeting_cost_in_specific_town_days() {
                 for (int day = 0; day <= towns_number; day++) {
                     long long int temp1 = shortest_path_cost_in_specific_days[i][z][day];
                     long long int temp2 = shortest_path_cost_in_specific_days[j][z][day];
-                    if (temp1 == -1 || temp2 == -1) {
-                        meeting_cost_in_specific_town_days[i][j][z][day] = -1;
+                    if (temp1 == IMPOSSIBLE || temp2 == IMPOSSIBLE) {
+                        meeting_cost_in_specific_town_days[i][j][z][day] = IMPOSSIBLE;
                     } else {
                         meeting_cost_in_specific_town_days[i][j][z][day] = temp1 + temp2;
                     }
@@ -113,7 +118,7 @@ void preprocess_meeting_cost_in_specific_town_days() {
     }
 }
 
-pair<pair<int, int>, pair<int, int> > find_min_meeting_cost_in_specific_town_days(const bool fixed_meeting[MAX_TOWNS]) {
+pair<pair<int, int>, pair<int, int> > find_min_meeting_cost_in_specific_town_days(const bool fixed_meeting[town_number]) {
     long long int min_cost = INT64_MAX;
     pair<pair<int, int>, pair<int, int> > best; // <i, j>, z -> i and j going to z
     for (int day = 0; day <= towns_number; day++) {
@@ -125,11 +130,11 @@ pair<pair<int, int>, pair<int, int> > find_min_meeting_cost_in_specific_town_day
                 if (!fixed_meeting[i] && !fixed_meeting[j] && (!meeting[i][j] || !meeting[j][i])) {
                     long long int temp1 = meeting_cost_in_specific_town_days[families_town[i]][families_town[j]][i][day];
                     long long int temp2 = meeting_cost_in_specific_town_days[families_town[i]][families_town[j]][j][day];
-                    if (temp1 != -1 && temp1 < min_cost && !meeting[i][j]) {
+                    if (temp1 != IMPOSSIBLE && temp1 < min_cost && !meeting[i][j]) {
                         min_cost = temp1;
                         best = {{i, j}, {i, day}};
                     }
-                    if (temp2 != -1 && temp2 < min_cost && !meeting[j][i]) {
+                    if (temp2 != IMPOSSIBLE && temp2 < min_cost && !meeting[j][i]) {
                         min_cost = temp2;
                         best = {{i, j}, {j, day}};
                     }
@@ -155,8 +160,8 @@ vector<pair<pair<int, int>, pair<int, int> > > start() {
     while (meeting_number != max_meeting_number) {
         day++;
         int meetings_plan_number = towns_number / 2;
-        bool fixed_meeting[MAX_TOWNS];
-        fill(fixed_meeting, fixed_meeting + MAX_TOWNS, false);
+        bool fixed_meeting[town_number];
+        fill(fixed_meeting, fixed_meeting + town_number, false);
         for (int i = 0; i < meetings_plan_number; i++) {
             pair<pair<int, int>, pair<int, int> > plan = find_min_meeting_cost_in_specific_town_days(fixed_meeting);
             if (plan.first.first == 0) {
