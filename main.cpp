@@ -68,7 +68,7 @@ void preprocess_shortest_path_cost_in_specific_days() {
     for (int day = 1; day <= towns_number; day++) {
         for (int i = 1; i <= towns_number; i++) {
             for (int j = 1; j <= towns_number; j++) {
-                long long int min_cost = INT32_MAX;
+                long long int min_cost = INT64_MAX;
                 int min_town = -1;
                 vector<int> adjacent_list_road = adjacent_list_roads[j];
                 for (int adjacent_road : adjacent_list_road) {
@@ -78,7 +78,7 @@ void preprocess_shortest_path_cost_in_specific_days() {
                         min_town = adjacent_road;
                     }
                 }
-                min_cost = min_cost == INT32_MAX ? -1 : min_cost;
+                min_cost = min_cost == INT64_MAX ? -1 : min_cost;
                 shortest_path_cost_in_specific_days[i][j][day] = min_cost;
                 if (min_cost == -1) {
                     next_town_for_shortest_path_in_specific_days[i][j][day] = -1;
@@ -114,7 +114,7 @@ void preprocess_meeting_cost_in_specific_town_days() {
 }
 
 pair<pair<int, int>, pair<int, int> > find_min_meeting_cost_in_specific_town_days(const bool fixed_meeting[MAX_TOWNS]) {
-    long long int min_cost = INT32_MAX;
+    long long int min_cost = INT64_MAX;
     pair<pair<int, int>, pair<int, int> > best; // <i, j>, z -> i and j going to z
     for (int day = 0; day <= towns_number; day++) {
         for (int i = 1; i <= towns_number; i++) {
