@@ -38,11 +38,15 @@ vector<pair<pair<int, int>, pair<int, int> > > handle_a_day(int day) {
     vector<pair<pair<int, int>, pair<int, int> > > day_plan;
     bool fixed_plan[MAX_TOWNS];
     fill(fixed_plan, fixed_plan + MAX_TOWNS, false);
-    for (int i = 1; i <= towns_number; i++) {
+    for (int z = 1; z <= towns_number; z++) {
+        int i = (day + z - 1) % towns_number;
+        i = (i == 0) ? towns_number : i;
         if (fixed_plan[i]) {
             continue;
         }
-        for (int j = 1; j <= towns_number; j++) {
+        for (int x = 1; x <= towns_number; x++) {
+            int j = (day + x - 1) % towns_number;
+            j = (j == 0) ? towns_number : j;
             if (i == j || fixed_plan[j] || did_meet[i][j]) {
                 continue;
             }
