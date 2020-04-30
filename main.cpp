@@ -16,11 +16,15 @@ int meeting_number = 0;
 bool did_meet[MAX_TOWNS][MAX_TOWNS];
 // did i meet j in j?
 
+vector<pair<int, int> > meet_town;
+// array of pair<number of meeting for town i, town i>
+
 void get_inputs() {
     cin >> towns_number >> roads_number;
     for (int i = 1; i <= towns_number; i++) {
         cin >> residency_town_cost[i];
         families_town[i] = i;
+        meet_town.emplace_back(0, i);
     }
 }
 
@@ -38,28 +42,25 @@ vector<pair<pair<int, int>, pair<int, int> > > handle_a_day(int day) {
     vector<pair<pair<int, int>, pair<int, int> > > day_plan;
     bool fixed_plan[MAX_TOWNS];
     fill(fixed_plan, fixed_plan + MAX_TOWNS, false);
-    for (int z = 1; z <= towns_number; z++) {
-        int i = (day + z - 1) % towns_number;
-        i = (i == 0) ? towns_number : i;
-        if (fixed_plan[i]) {
+    for (auto &i : meet_town) {
+        if (fixed_plan[i.second]) {
             continue;
         }
-        for (int x = 1; x <= towns_number; x++) {
-            int j = (day + x - 1) % towns_number;
-            j = (j == 0) ? towns_number : j;
-            if (i == j || fixed_plan[j] || did_meet[i][j]) {
+        for (auto &j : meet_town) {
+            if (i.second == j.second || fixed_plan[j.second] || did_meet[i.second][j.second]) {
                 continue;
             }
-            if (families_town[i] != j)
-                day_plan.push_back({{1, day}, {i, j}});
-            if (families_town[j] != j)
-                day_plan.push_back({{1, day}, {j, j}});
-            families_town[i] = j;
-            families_town[j] = j;
-            fixed_plan[i] = true;
-            fixed_plan[j] = true;
-            did_meet[i][j] = true;
-            day_plan.push_back({{2, day}, {i, j}});
+            if (families_town[i.second] != j.second)
+                day_plan.push_back({{1, day}, {i.second, j.second}});
+            if (families_town[j.second] != j.second)
+                day_plan.push_back({{1, day}, {j.second, j.second}});
+            families_town[i.second] = j.second;
+            families_town[j.second] = j.second;
+            fixed_plan[i.second] = true;
+            fixed_plan[j.second] = true;
+            did_meet[i.second][j.second] = true;
+            day_plan.push_back({{2, day}, {i.second, j.second}});
+            i.first++;
             meeting_number++;
             break;
         }
@@ -82,6 +83,7 @@ vector<pair<pair<int, int>, pair<int, int> > > start() {
     int day = 0;
     while (meeting_number != max_meeting) {
         day++;
+        sort(meet_town.begin(), meet_town.end());
         vector<pair<pair<int, int>, pair<int, int> > > day_plan = handle_a_day(day);
         for (auto plan : day_plan) {
             plans.push_back(plan);
