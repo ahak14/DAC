@@ -6,7 +6,7 @@ const int MAX_TOWNS = 100 + 1;
 
 int towns_number;
 int roads_number;
-int residency_town_cost[6];
+int residency_town_cost[MAX_TOWNS];
 
 int families_town[MAX_TOWNS];
 // town of families on time
@@ -62,7 +62,10 @@ vector<pair<pair<int, int>, pair<int, int> > > handle_a_day(int day) {
     }
     for (int i = 1; i <= towns_number; i++) {
         if (!fixed_plan[i]) {
-            day_plan.push_back({{1, day}, {i, min_town_cost}});
+            if (families_town[i] != min_town_cost) {
+                day_plan.push_back({{1, day}, {i, min_town_cost}});
+                families_town[i] = min_town_cost;
+            }
             break;
         }
     }
