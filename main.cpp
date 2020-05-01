@@ -16,15 +16,13 @@ int meeting_number = 0;
 bool did_meet[MAX_TOWNS][MAX_TOWNS];
 // did i meet j in j?
 
-vector<pair<int, int> > meet_town;
-// array of pair<number of meeting for town i, town i>
+vector<pair<pair<int, int>, pair<int, int> > > day_plan;
 
 void get_inputs() {
     cin >> towns_number >> roads_number;
     for (int i = 1; i <= towns_number; i++) {
         cin >> residency_town_cost[i];
         families_town[i] = i;
-        meet_town.emplace_back(0, i);
     }
 }
 
@@ -38,42 +36,56 @@ void find_min_town_cost() {
     }
 }
 
-vector<pair<pair<int, int>, pair<int, int> > > handle_a_day(int day) {
-    vector<pair<pair<int, int>, pair<int, int> > > day_plan;
-    bool fixed_plan[MAX_TOWNS];
-    fill(fixed_plan, fixed_plan + MAX_TOWNS, false);
-    for (auto &i : meet_town) {
-        if (fixed_plan[i.second]) {
-            continue;
-        }
-        for (int x = (int) meet_town.size() - 1; x >= 0; x--) {
-            auto &j = meet_town[x];
-            if (i.second == j.second || fixed_plan[j.second] || did_meet[i.second][j.second]) {
-                continue;
-            }
-            if (families_town[i.second] != j.second)
-                day_plan.push_back({{1,        day},
-                                    {i.second, j.second}});
-            if (families_town[j.second] != j.second)
-                day_plan.push_back({{1,        day},
-                                    {j.second, j.second}});
-            families_town[i.second] = j.second;
-            families_town[j.second] = j.second;
-            fixed_plan[i.second] = true;
-            fixed_plan[j.second] = true;
-            did_meet[i.second][j.second] = true;
-            day_plan.push_back({{2,        day},
-                                {i.second, j.second}});
-            i.first++;
-            meeting_number++;
-            break;
+void party(int guest, int host, int day) {
+    if (families_town[guest] != host)
+        day_plan.push_back({{1,     day},
+                            {guest, host}});
+    if (families_town[host] != host)
+        day_plan.push_back({{1,    day},
+                            {host, host}});
+    families_town[guest] = host;
+    families_town[host] = host;
+    day_plan.push_back({{2,     day},
+                        {guest, host}});
+    did_meet[guest][host] = true;
+    meeting_number++;
+}
+
+vector<pair<pair<int, int>, pair<int, int> > > handle_a_day_odd(int day) {
+    day_plan.clear();
+    int center = (day + 1) / 2;
+    for (int i = 1; i <= towns_number / 2; i++) {
+        int family1 = (center - 1 + i) % towns_number + 1;
+        int family2 = (((center - 1 - i) + towns_number) % towns_number) + 1;
+        if (did_meet[family1][family2]) {
+            party(family2, family1, day);
+        } else {
+            party(family1, family2, day);
         }
     }
-    for (int i = 1; i <= towns_number; i++) {
-        if (!fixed_plan[i] && families_town[i] != min_town_cost) {
-            day_plan.push_back({{1, day},
-                                {i, min_town_cost}});
-            families_town[i] = min_town_cost;
+    if (families_town[center] != min_town_cost) {
+        day_plan.push_back({{1, day},
+                            {center, min_town_cost}});
+        families_town[center] = min_town_cost;
+    }
+    return day_plan;
+}
+
+vector<pair<pair<int, int>, pair<int, int> > > handle_a_day_even(int day) {
+    day_plan.clear();
+    int center = (day + 3) / 2;
+    if (did_meet[1][center]) {
+        party(center, 1, day);
+    } else {
+        party(1, center, day);
+    }
+    for (int i = 1; i < towns_number / 2; i++) {
+        int family1 = (center - 2 + i) % (towns_number - 1) + 2;
+        int family2 = (((center - 2 - i) + (towns_number - 1)) % (towns_number - 1)) + 2;
+        if (did_meet[family1][family2]) {
+            party(family2, family1, day);
+        } else {
+            party(family1, family2, day);
         }
     }
     return day_plan;
@@ -85,9 +97,13 @@ vector<pair<pair<int, int>, pair<int, int> > > start() {
     int day = 0;
     while (meeting_number != max_meeting) {
         day++;
-        sort(meet_town.begin(), meet_town.end());
-        vector<pair<pair<int, int>, pair<int, int> > > day_plan = handle_a_day(day);
-        for (auto plan : day_plan) {
+        vector<pair<pair<int, int>, pair<int, int> > > dp;
+        if (towns_number % 2 == 1) {
+            dp = handle_a_day_odd(day);
+        } else {
+            dp = handle_a_day_even(day);
+        }
+        for (auto plan : dp) {
             plans.push_back(plan);
         }
     }
