@@ -4,119 +4,90 @@ using namespace std;
 
 const int MAX_TOWNS = 100 + 1;
 
-int towns_number;
-int roads_number;
-int residency_town_cost[MAX_TOWNS];
+int towns_number, roads_number;
+map<int, int> towns_map;
+vector<int> adj[MAX_TOWNS];
 
-int families_town[MAX_TOWNS];
-// town of families on time
-int min_town_cost;
-int meeting_number = 0;
-// number of meeting so far
-bool did_meet[MAX_TOWNS][MAX_TOWNS];
-// did i meet j in j?
+bool visited[MAX_TOWNS];
+int family_place[MAX_TOWNS];
 
-vector<pair<pair<int, int>, pair<int, int> > > day_plan;
-
-void get_inputs() {
+void get_input() {
     cin >> towns_number >> roads_number;
+    for (int i = 0; i < towns_number; i++) {
+        int temp;
+        cin >> temp;
+    }
+    for (int i = 1; i < towns_number; i++) {
+        int s, t, c;
+        cin >> s >> t >> c;
+        adj[s].push_back(t);
+        adj[t].push_back(s);
+    }
+    for (int i = 0; i < towns_number; i++) {
+        family_place[i] = i;
+    }
+}
+
+void make_map() {
+    int node = -1;
     for (int i = 1; i <= towns_number; i++) {
-        cin >> residency_town_cost[i];
-        families_town[i] = i;
+        if (adj[i].size() == 1) {
+            node = i;
+            break;
+        }
     }
-}
-
-void find_min_town_cost() {
-    int min_cost = INT32_MAX;
-    for (int i = 1; i <= towns_number; i++) {
-        if (residency_town_cost[i] < min_cost) {
-            min_cost = residency_town_cost[i];
-            min_town_cost = i;
+    for (int i = 0; i < towns_number; i++) {
+        towns_map.insert({i, node});
+        visited[node] = true;
+        if (!visited[adj[node][0]]) {
+            node = adj[node][0];
+        } else if (i != towns_number - 1) {
+            node = adj[node][1];
         }
     }
 }
 
-void party(int guest, int host, int day) {
-    if (families_town[guest] != host)
-        day_plan.push_back({{1,     day},
-                            {guest, host}});
-    if (families_town[host] != host)
-        day_plan.push_back({{1,    day},
-                            {host, host}});
-    families_town[guest] = host;
-    families_town[host] = host;
-    day_plan.push_back({{2,     day},
-                        {guest, host}});
-    did_meet[guest][host] = true;
-    meeting_number++;
-}
-
-vector<pair<pair<int, int>, pair<int, int> > > handle_a_day_odd(int day) {
-    day_plan.clear();
-    int center = (day + 1) / 2;
-    for (int i = 1; i <= towns_number / 2; i++) {
-        int family1 = (center - 1 + i) % towns_number + 1;
-        int family2 = (((center - 1 - i) + towns_number) % towns_number) + 1;
-        if (did_meet[family1][family2]) {
-            party(family2, family1, day);
-        } else {
-            party(family1, family2, day);
-        }
-    }
-    if (families_town[center] != min_town_cost) {
-        day_plan.push_back({{1, day},
-                            {center, min_town_cost}});
-        families_town[center] = min_town_cost;
-    }
-    return day_plan;
-}
-
-vector<pair<pair<int, int>, pair<int, int> > > handle_a_day_even(int day) {
-    day_plan.clear();
-    int center = (day + 3) / 2;
-    if (did_meet[1][center]) {
-        party(center, 1, day);
-    } else {
-        party(1, center, day);
-    }
-    for (int i = 1; i < towns_number / 2; i++) {
-        int family1 = (center - 2 + i) % (towns_number - 1) + 2;
-        int family2 = (((center - 2 - i) + (towns_number - 1)) % (towns_number - 1)) + 2;
-        if (did_meet[family1][family2]) {
-            party(family2, family1, day);
-        } else {
-            party(family1, family2, day);
-        }
-    }
-    return day_plan;
-}
-
-vector<pair<pair<int, int>, pair<int, int> > > start() {
+vector<pair<pair<int, int>, pair<int, int> > > get_plans() {
     vector<pair<pair<int, int>, pair<int, int> > > plans;
-    int max_meeting = towns_number * (towns_number - 1);
-    int day = 0;
-    while (meeting_number != max_meeting) {
-        day++;
-        vector<pair<pair<int, int>, pair<int, int> > > dp;
-        if (towns_number % 2 == 1) {
-            dp = handle_a_day_odd(day);
-        } else {
-            dp = handle_a_day_even(day);
+    for (int i = towns_number; i > 0; i--) {
+        for (int j = towns_number - 1; j > 0; j--) {
+            int temp = towns_number - i - j < 0 ? 2 * towns_number - i - j : towns_number - i - j;
+            plans.push_back({{2, 2 * (towns_number - i) + 1 + (towns_number - 1 - j)}, {temp, towns_number - i}});
         }
-        for (auto plan : dp) {
-            plans.push_back(plan);
+    }
+    for (int i = towns_number - 1; i >= 0; i--) {
+        for (int day = 1; day <= 2 * towns_number - 2 - 2 * (towns_number - 1 - i); day++) {
+            family_place[i] = --family_place[i];
+            plans.push_back({{1, day}, {i, abs(family_place[i])}});
+        }
+        for (int day = 3 * towns_number - 1 - 2 * (towns_number - 1 - i); day <= 3 * towns_number - 3; day++) {
+            family_place[i] = --family_place[i];
+            if (abs(family_place[i]) >= towns_number) {
+                break;
+            }
+            plans.push_back({{1, day}, {i, abs(family_place[i])}});
         }
     }
     return plans;
 }
 
+bool cmp(pair<pair<int, int>, pair<int, int> > f1, pair<pair<int, int>, pair<int, int> > f2) {
+    if (f1.first.second != f2.first.second) {
+        return f1.first.second < f2.first.second;
+    }
+    if (f1.first.first != f2.first.first) {
+        return f1.first.first < f2.first.first;
+    }
+    return f1.second.first < f2.second.first;
+}
+
 int main() {
-    get_inputs();
-    find_min_town_cost();
-    vector<pair<pair<int, int>, pair<int, int> > > plans = start();
+    get_input();
+    make_map();
+    auto plans = get_plans();
+    sort(plans.begin(), plans.end(), cmp);
     cout << plans.size() << endl;
-    for (auto &plan : plans) {
-        cout << plan.first.first << " " << plan.first.second << " " << plan.second.first << " " << plan.second.second
-             << endl;
+    for (auto & plan : plans) {
+        cout << plan.first.first << " " << plan.first.second << " " << towns_map[plan.second.first] << " " << towns_map[plan.second.second] << endl;
     }
 }
