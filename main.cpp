@@ -120,22 +120,26 @@ void preprocess_meeting_cost_in_specific_town_days() {
 pair<pair<int, int>, pair<int, int> > find_min_meeting_cost_in_specific_town_days(const bool fixed_meeting[MAX_TOWNS]) {
     long long int min_cost = INT64_MAX;
     pair<pair<int, int>, pair<int, int> > best; // <i, j>, z -> i and j going to z
-    for (int day = 0; day <= towns_number; day++) {
-        for (int i = 1; i <= towns_number; i++) {
-            for (int j = 1; j <= towns_number; j++) {
-                if (i == j) {
-                    continue;
-                }
-                if (!fixed_meeting[i] && !fixed_meeting[j] && (!meeting[i][j] || !meeting[j][i])) {
+    for (int i = 1; i <= towns_number; i++) {
+        if (fixed_meeting[i]) continue;
+        for (int j = 1; j <= towns_number; j++) {
+            if (i == j) {
+                continue;
+            }
+            if (!fixed_meeting[j] && (!meeting[i][j] || !meeting[j][i])) {
+                for (int day = towns_number; day >= 0; day--) {
                     long long int temp1 = meeting_cost_in_specific_town_days[families_town[i]][families_town[j]][i][day];
                     long long int temp2 = meeting_cost_in_specific_town_days[families_town[i]][families_town[j]][j][day];
+                    if (temp1 == IMPOSSIBLE && temp2 == IMPOSSIBLE) break;
                     if (temp1 != IMPOSSIBLE && temp1 < min_cost && !meeting[i][j]) {
                         min_cost = temp1;
-                        best = {{i, j}, {i, day}};
+                        best = {{i, j},
+                                {i, day}};
                     }
                     if (temp2 != IMPOSSIBLE && temp2 < min_cost && !meeting[j][i]) {
                         min_cost = temp2;
-                        best = {{i, j}, {j, day}};
+                        best = {{i, j},
+                                {j, day}};
                     }
                 }
             }
@@ -144,10 +148,12 @@ pair<pair<int, int>, pair<int, int> > find_min_meeting_cost_in_specific_town_day
     return best;
 }
 
-void company(pair<pair<int, int>, pair<int, int> > &plan, vector<pair<pair<int, int>, pair<int, int> > > &result, int day) {
+void
+company(pair<pair<int, int>, pair<int, int> > &plan, vector<pair<pair<int, int>, pair<int, int> > > &result, int day) {
     int host = plan.first.first == plan.second.first ? plan.first.first : plan.first.second;
     int company = plan.first.first == host ? plan.first.second : plan.first.first;
-    result.push_back({{2, day}, {company, host}});
+    result.push_back({{2,       day},
+                      {company, host}});
     meeting[host][company] = true;
     meeting_number++;
 }
@@ -175,9 +181,11 @@ vector<pair<pair<int, int>, pair<int, int> > > start() {
                 continue;
             }
             if (new_town1 != families_town[plan.first.first])
-                result.push_back({{1, day}, {plan.first.first, new_town1}});
+                result.push_back({{1,                day},
+                                  {plan.first.first, new_town1}});
             if (new_town2 != families_town[plan.first.second])
-                result.push_back({{1, day}, {plan.first.second, new_town2}});
+                result.push_back({{1,                 day},
+                                  {plan.first.second, new_town2}});
             families_town[plan.first.first] = new_town1;
             families_town[plan.first.second] = new_town2;
             if (plan.second.second == 1) {
@@ -197,7 +205,8 @@ int main() {
     preprocess_meeting_cost_in_specific_town_days();
     vector<pair<pair<int, int>, pair<int, int> > > plans = start();
     cout << plans.size() << endl;
-    for (auto & plan : plans) {
-        cout << plan.first.first << " " << plan.first.second << " " << plan.second.first << " " << plan.second.second << endl;
+    for (auto &plan : plans) {
+        cout << plan.first.first << " " << plan.first.second << " " << plan.second.first << " " << plan.second.second
+             << endl;
     }
 }
